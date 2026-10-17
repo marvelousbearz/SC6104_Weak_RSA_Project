@@ -1,0 +1,27 @@
+:root { --paper:#f5f1e8; --card:#fff; --ink:#18384a; --body:#46616b; --muted:#718a8d; --line:#c8d6d1; --accent:#167d86; --serif:Georgia,serif; --sans:Arial,sans-serif; --mono:"Courier New",monospace; }
+* { box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; }
+body { margin:0; background:#dce5df; color:var(--ink); font-family:var(--sans); }
+.deck { width:1600px; height:900px; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(var(--deck-scale,1)); transform-origin:center; background:var(--paper); overflow:hidden; }
+.slide { display:none; width:1600px; height:900px; padding:56px 78px 68px; position:absolute; inset:0; background:var(--paper); }
+.slide.active { display:block; animation:appear .28s ease-out; }
+@keyframes appear { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+header { height:46px; border-top:3px solid var(--ink); padding-top:16px; display:flex; justify-content:space-between; font:700 14px var(--mono); color:var(--body); letter-spacing:.04em; }
+header span:last-child { color:var(--accent); }
+footer { position:absolute; left:78px; right:78px; bottom:28px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font:14px var(--mono); }
+h1 { margin:24px 0 6px; max-width:1250px; font:700 68px/1.03 var(--serif); letter-spacing:-.03em; }
+.cover h1 { font-size:82px; margin-top:60px; }
+h2 { margin:0 0 18px; font:700 30px var(--serif); }
+.kicker { color:var(--accent); font:700 15px var(--mono); letter-spacing:.05em; margin:20px 0 0; }
+.lede { max-width:1020px; color:var(--body); font-size:29px; line-height:1.3; margin:8px 0 42px; }
+.cover-grid,.two-col { display:grid; grid-template-columns:1.6fr 1fr; gap:88px; align-items:center; }
+.formula-list { display:grid; gap:40px; margin-top:72px; }.formula-list div { padding-bottom:28px; border-bottom:1px solid var(--line); }.formula-list code,.hero-formula { color:var(--accent); }
+code,pre { font-family:var(--mono); } code { font-weight:700; font-size:34px; }
+.facts { margin:0; padding:0; list-style:none; display:grid; gap:28px; }.facts li { padding-left:34px; position:relative; color:var(--body); font-size:22px; line-height:1.35; }.facts li::before { content:""; width:12px; height:12px; background:var(--muted); position:absolute; left:0; top:8px; }.facts li:first-child::before { background:var(--accent); }.facts b { display:block; color:var(--ink); font-size:26px; margin-bottom:4px; }
+.paper { min-height:244px; padding:46px; background:var(--card); border:1px solid var(--line); display:grid; align-content:center; gap:26px; }.paper small { font:700 16px var(--mono); color:var(--muted); }.paper strong { color:var(--accent); font-size:26px; }.paper code { color:var(--ink); }
+.key-row,.three-col { display:grid; grid-template-columns:repeat(2,310px); gap:150px; margin:66px 28px; }.paper.key { min-height:156px; padding:30px; text-align:center; }.key small { color:var(--accent); font:18px var(--mono); }
+.hero-formula { text-align:center; font:700 58px var(--mono); margin:90px 0 22px; }.center { text-align:center; font-size:26px; color:var(--body); }
+.demo { grid-template-columns:1.65fr .85fr; gap:64px; align-items:start; }.demo ol { margin:10px 0; padding-left:46px; display:grid; gap:36px; color:var(--ink); font-size:30px; }.demo li::marker { color:var(--accent); font-family:var(--mono); font-weight:bold; }.demo pre { margin:0; padding:34px; background:var(--card); border:1px solid var(--line); color:var(--ink); font-size:20px; line-height:1.4; }
+.derivation { display:grid; gap:35px; }.derivation p { color:var(--body); font-size:27px; margin:0; }.three-col { grid-template-columns:repeat(3,1fr); gap:52px; margin:60px 30px; }.three-col .paper { min-height:174px; }.three-col code { color:var(--accent); }
+.chart-grid { display:grid; grid-template-columns:2fr .9fr; gap:44px; align-items:center; }.chart-grid figure { margin:0; }.chart-grid figcaption { font:700 26px var(--serif); margin-bottom:12px; }.chart-grid img { width:100%; border:1px solid var(--line); background:var(--paper); }.chart-note { border-left:4px solid var(--accent); padding-left:24px; font-size:22px; color:var(--body); line-height:1.4; }.chart-note b { color:var(--ink); font-size:26px; }.chart-note code { font-size:16px; color:var(--accent); }
+.conclusion { margin-top:55px; max-width:1050px; }.takeaway { position:absolute; left:78px; bottom:86px; max-width:1300px; color:var(--accent); font-size:31px; font-weight:700; line-height:1.2; }.hint { position:fixed; bottom:16px; left:0; right:0; text-align:center; color:#476b6f; font:14px var(--mono); }

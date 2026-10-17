@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Breaking Weak RSA Keys</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="deck">
+    <section class="slide active cover">
+      <header><span>SC6104 / WEAK RSA</span><span>01</span></header>
+      <p class="kicker">SC6104 CRYPTOGRAPHY COURSE PROJECT</p>
+      <div class="cover-grid">
+        <div>
+          <h1>Breaking<br>Weak RSA Keys</h1>
+          <p class="lede">Two controlled attacks show why large moduli cannot compensate for faulty key generation.</p>
+        </div>
+        <div class="formula-list">
+          <div><h2>Shared prime reuse</h2><code>gcd(N₁, N₂) = p</code></div>
+          <div><h2>Small private exponent</h2><code>d &lt; N^(1/4) / 3</code></div>
+        </div>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>THREAT MODEL</span><span>02</span></header>
+      <h1>Threat model</h1><p class="lede">The attacker receives public keys only</p>
+      <div class="two-col">
+        <ul class="facts"><li><b>Known to attacker</b>RSA moduli N and public exponent e from a controlled local key set.</li><li><b>Not attempted</b>No generic factorization of a correctly generated 2048-bit RSA modulus.</li><li><b>Goal</b>Recover the private key only when an implementation makes a specific error.</li></ul>
+        <aside class="paper"><small>PUBLIC</small><code>(N, e)</code><strong>weak parameter<br>or repeated prime</strong></aside>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>ATTACK 1 / SHARED PRIME</span><span>03</span></header>
+      <h1>Shared-prime attack</h1><p class="lede">Faulty randomness can reuse one secret prime across two public moduli</p>
+      <div class="key-row"><div class="paper key"><code>N₁ = p × q₁</code><small>same p</small></div><div class="paper key"><code>N₂ = p × q₂</code><small>same p</small></div></div>
+      <p class="hero-formula">gcd(N₁, N₂) = p</p><p class="center">Knowing p gives q, φ(N), and then d</p>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>DEMO / SHARED PRIME</span><span>04</span></header>
+      <h1>Live demonstration</h1><p class="lede">The attack program sees only public parameters</p>
+      <div class="two-col demo"><ol><li>Generate four 2048-bit public keys</li><li>Reuse one prime in exactly two keys</li><li>Compute gcd for each public-key pair</li><li>Reconstruct d and decrypt the message</li></ol><pre>gcd scan found
+1 vulnerable pair
+
+Recovered plaintext:
+RSA keys need
+independent primes</pre></div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>ATTACK 2 / WIENER</span><span>05</span></header>
+      <h1>Wiener's small-d attack</h1><p class="lede">A private exponent chosen too small creates a continued-fraction shortcut</p>
+      <div class="two-col"><div class="derivation"><code>e × d − k × φ(N) = 1</code><p>When d is small, k / d approximates e / N</p><p>continued fractions produce candidate values for d</p></div><aside class="paper"><small>CLASSICAL SUFFICIENT<br>VULNERABILITY RANGE</small><code>d &lt; N^(1/4) / 3</code></aside></div>
+      <p class="center">We verify candidates by reconstructing p and q</p><footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>DEMO / WIENER</span><span>06</span></header>
+      <h1>Second live attack</h1><p class="lede">A 2048-bit modulus still fails when d is intentionally tiny</p>
+      <div class="three-col"><div class="paper"><small>PUBLIC KEY</small><code>N, e</code></div><div class="paper"><small>CONVERGENTS</small><code>k / d</code></div><div class="paper"><small>RECOVERED</small><code>d, p, q</code></div></div>
+      <p class="center">The demo verifies the recovered d by decrypting a second message</p><footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>EXPERIMENTS</span><span>07</span></header>
+      <h1>Measured controlled experiments</h1><p class="lede">Timings regenerate each run on locally generated vulnerable keys</p>
+      <div class="chart-grid"><figure><figcaption>Shared-prime scan</figcaption><img src="../results/attack_timings.svg" alt="Timing chart for shared-prime scan and Wiener recovery"></figure><div class="chart-note"><b>Interpretation</b><p>Batch GCD scanning grows with the number of public keys. Wiener recovery exploits a parameter weakness rather than generic factorization.</p><p>Run <code>python3 -m experiments.run_experiments</code> to regenerate results.</p></div></div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>CONCLUSION</span><span>08</span></header>
+      <h1>Large RSA keys still need correct generation</h1>
+      <ul class="facts conclusion"><li><b>Use reviewed libraries</b>Avoid custom key-generation code in production systems.</li><li><b>Use a CSPRNG</b>Independent entropy prevents repeated primes across keys.</li><li><b>Avoid manual d selection</b>RSA parameters require validated mathematical constraints.</li></ul>
+      <p class="takeaway">Key length protects against generic factoring. It cannot repair flawed randomness or unsafe parameters.</p><footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+  </main>
+  <p class="hint">Use ← → keys to navigate</p>
+  <script>
+    const slides = [...document.querySelectorAll('.slide')]; let current = 0;
+    function show(index) { slides[current].classList.remove('active'); current = (index + slides.length) % slides.length; slides[current].classList.add('active'); }
+    function fitDeck() { document.documentElement.style.setProperty('--deck-scale', Math.min(innerWidth / 1600, innerHeight / 900)); }
+    addEventListener('resize', fitDeck); fitDeck();
+    addEventListener('keydown', event => {
+      if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); show(current + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); show(current - 1); }
+    });
+  </script>
+</body>
+</html>
