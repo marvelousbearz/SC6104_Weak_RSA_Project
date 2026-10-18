@@ -20,6 +20,14 @@ python3 -m experiments.run_experiments
 python3 -m experiments.run_advanced_experiments
 ```
 
+```bash
+cd SC6104_Weak_RSA_Project
+py src/demo.py
+py experiments/experiments.py first-hit --bits 1024 2048 --trials 5
+py experiments/experiments.py crack --bits 1024 2048 --trials 3
+py experiments/experiments.py padding --bits 1024
+py experiments/experiments.py crack --bits 4096 --trials 1
+```
 `src.demo` runs the live demonstration. It creates controlled vulnerable keys,
 recovers a test message from public parameters, and verifies the result.
 
