@@ -1,15 +1,14 @@
-"""Advanced, fully local experiments for the RSA weak-key audit project."""
+"""Advanced, fully local experiments for the Common Modulus and Wiener project."""
 
 import csv
 from pathlib import Path
 from statistics import median
 from time import perf_counter
 
-from src.shared_prime_attack import (
-    batch_gcd_findings,
-    find_shared_prime_pairs,
-    generate_vulnerable_keyset,
-)
+from itertools import combinations
+from math import gcd
+
+from src.common_modulus_attack import find_common_modulus_pairs, generate_common_modulus_keyset
 from src.wiener_attack import generate_wiener_key_at_ratio, wiener_attack
 
 
@@ -23,23 +22,31 @@ def measure(function, *args):
     return result, (perf_counter() - started) * 1_000_000
 
 
-def batch_gcd_benchmark():
+def common_modulus_benchmark():
     rows = []
     for count in (8, 16, 32, 64, 128):
-        keys, _, _ = generate_vulnerable_keyset(count=count, bits=256)
-        pair_times, batch_times = [], []
+        naive_times, indexed_times = [], []
+        keys, expected_pair = generate_common_modulus_keyset(count=count, bits=256)
         for _ in range(3):
-            pair_findings, pair_us = measure(find_shared_prime_pairs, keys)
-            batch_findings, batch_us = measure(batch_gcd_findings, keys)
-            if len(pair_findings) != 1 or len(batch_findings) != 2:
-                raise RuntimeError("controlled shared-prime finding failed")
-            pair_times.append(pair_us)
-            batch_times.append(batch_us)
+            naive_findings, naive_us = measure(
+                lambda collection: [
+                    (left, right)
+                    for left, right in combinations(range(len(collection)), 2)
+                    if collection[left].n == collection[right].n
+                    and gcd(collection[left].e, collection[right].e) == 1
+                ],
+                keys,
+            )
+            indexed_findings, indexed_us = measure(find_common_modulus_pairs, keys)
+            if naive_findings != [expected_pair] or indexed_findings != [expected_pair]:
+                raise RuntimeError("controlled common-modulus finding failed")
+            naive_times.append(naive_us)
+            indexed_times.append(indexed_us)
         rows.append({
             "public_keys": count,
-            "naive_pairwise_us": round(median(pair_times), 2),
-            "batch_gcd_us": round(median(batch_times), 2),
-            "vulnerable_keys_found": 2,
+            "naive_pairwise_us": round(median(naive_times), 2),
+            "indexed_scan_us": round(median(indexed_times), 2),
+            "vulnerable_pairs_found": 1,
         })
     return rows
 
@@ -74,19 +81,18 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
-def chart_svg(batch_rows, wiener_rows):
+def chart_svg(common_rows, wiener_rows):
     """Write an accessible, no-dependency SVG with two experiment panels."""
-    batch_max = max(max(row["naive_pairwise_us"], row["batch_gcd_us"]) for row in batch_rows)
-    bar_width, gap, start_x = 27, 62, 95
-    batch_bars = []
-    batch_labels = []
-    for index, row in enumerate(batch_rows):
-        x = start_x + index * 88
-        naive_height = row["naive_pairwise_us"] / batch_max * 210
-        batch_height = row["batch_gcd_us"] / batch_max * 210
-        batch_bars.append(f'<rect x="{x}" y="{318-naive_height:.1f}" width="{bar_width}" height="{naive_height:.1f}" fill="#18384A"/>')
-        batch_bars.append(f'<rect x="{x+bar_width+5}" y="{318-batch_height:.1f}" width="{bar_width}" height="{batch_height:.1f}" fill="#167D86"/>')
-        batch_labels.append(f'<text x="{x+28}" y="342">{row["public_keys"]}</text>')
+    common_max = max(max(row["naive_pairwise_us"], row["indexed_scan_us"]) for row in common_rows) or 1
+    common_bars = []
+    common_labels = []
+    for index, row in enumerate(common_rows):
+        x = 95 + index * 88
+        naive_height = row["naive_pairwise_us"] / common_max * 210
+        indexed_height = row["indexed_scan_us"] / common_max * 210
+        common_bars.append(f'<rect x="{x}" y="{318-naive_height:.1f}" width="27" height="{naive_height:.1f}" fill="#18384A"/>')
+        common_bars.append(f'<rect x="{x+32}" y="{318-indexed_height:.1f}" width="27" height="{indexed_height:.1f}" fill="#167D86"/>')
+        common_labels.append(f'<text x="{x+29}" y="342">{row["public_keys"]}</text>')
     points = []
     wiener_labels = []
     max_ratio = max(row["requested_ratio"] for row in wiener_rows)
@@ -97,16 +103,16 @@ def chart_svg(batch_rows, wiener_rows):
         points.append(f"{x:.1f},{y:.1f}")
         if row["requested_ratio"] in (0.05, 0.34, 0.75, 1.00, 1.50, 2.00):
             wiener_labels.append(f'<text x="{x:.1f}" y="342">{row["requested_ratio"]:.2f}</text>')
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430" role="img" aria-label="Batch GCD and Wiener boundary experiment results">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430" role="img" aria-label="Common-modulus and Wiener boundary experiment results">
 <rect width="1200" height="430" fill="#F5F1E8"/>
 <style>text{{font-family:Arial,sans-serif;fill:#46616B;font-size:15px;text-anchor:middle}} .title{{font-family:Georgia,serif;fill:#18384A;font-size:24px;font-weight:bold;text-anchor:start}} .label{{font-size:13px}} .axis{{stroke:#718A8D;stroke-width:1}} .grid{{stroke:#C8D6D1;stroke-width:1}}</style>
-<text class="title" x="55" y="42">Naive pairwise GCD vs batch GCD</text><text class="title" x="650" y="42">Wiener recovery beyond the classic bound</text>
-<text class="label" x="55" y="68" text-anchor="start">median audit time, microseconds</text><text class="label" x="650" y="68" text-anchor="start">success rate across five trials</text>
+<text class="title" x="55" y="42">Common-modulus collection audit</text><text class="title" x="650" y="42">Wiener recovery beyond the classic bound</text>
+<text class="label" x="55" y="68" text-anchor="start">median scan time, microseconds</text><text class="label" x="650" y="68" text-anchor="start">success rate across five trials</text>
 <line class="axis" x1="55" y1="318" x2="555" y2="318"/><line class="axis" x1="55" y1="88" x2="55" y2="318"/>
 <line class="axis" x1="650" y1="318" x2="1130" y2="318"/><line class="axis" x1="650" y1="88" x2="650" y2="318"/>
 <line class="grid" x1="55" y1="213" x2="555" y2="213"/><line class="grid" x1="650" y1="213" x2="1130" y2="213"/>
-{''.join(batch_bars)}{''.join(batch_labels)}
-<rect x="70" y="372" width="14" height="14" fill="#18384A"/><text x="145" y="384">pairwise GCD</text><rect x="235" y="372" width="14" height="14" fill="#167D86"/><text x="302" y="384">batch GCD</text>
+{''.join(common_bars)}{''.join(common_labels)}
+<rect x="70" y="372" width="14" height="14" fill="#18384A"/><text x="145" y="384">naive pairs</text><rect x="235" y="372" width="14" height="14" fill="#167D86"/><text x="320" y="384">indexed by N</text>
 <polyline fill="none" stroke="#167D86" stroke-width="4" points="{' '.join(points)}"/>
 {''.join(f'<circle cx="{point.split(",")[0]}" cy="{point.split(",")[1]}" r="5" fill="#167D86"/>' for point in points)}{''.join(wiener_labels)}
 <line x1="762" y1="88" x2="762" y2="318" stroke="#718A8D" stroke-dasharray="5 5"/><text x="769" y="105" text-anchor="start">classical 1/3 guide</text>
@@ -116,12 +122,12 @@ def chart_svg(batch_rows, wiener_rows):
 
 def main():
     RESULTS.mkdir(exist_ok=True)
-    batch_rows = batch_gcd_benchmark()
+    common_rows = common_modulus_benchmark()
     wiener_rows = wiener_boundary_benchmark()
-    write_csv(RESULTS / "batch_gcd_benchmark.csv", batch_rows)
+    write_csv(RESULTS / "common_modulus_benchmark.csv", common_rows)
     write_csv(RESULTS / "wiener_boundary.csv", wiener_rows)
     (RESULTS / "advanced_experiments.svg").write_text(
-        chart_svg(batch_rows, wiener_rows), encoding="utf-8"
+        chart_svg(common_rows, wiener_rows), encoding="utf-8"
     )
     print("Wrote advanced results to", RESULTS)
 

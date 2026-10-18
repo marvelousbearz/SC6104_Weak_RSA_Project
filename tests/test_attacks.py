@@ -1,12 +1,12 @@
 import unittest
 
 from src.rsa_utils import bytes_to_int, decrypt_int, encrypt_int
-from src.shared_prime_attack import (
-    batch_gcd_findings,
-    find_shared_prime_pairs,
-    generate_vulnerable_keyset,
-    recover_batch_gcd_private_keys,
-    recover_shared_prime_private_keys,
+from src.common_modulus_attack import (
+    common_modulus_attack,
+    find_common_modulus_pairs,
+    generate_common_modulus_keys,
+    generate_common_modulus_keyset,
+    recover_messages_from_pairs,
 )
 from src.wiener_attack import (
     generate_wiener_key_at_ratio,
@@ -16,33 +16,31 @@ from src.wiener_attack import (
 
 
 class WeakRsaAttackTests(unittest.TestCase):
-    def test_shared_prime_attack_recovers_two_keys(self):
-        keys, private_keys, pair = generate_vulnerable_keyset(count=4, bits=128)
-        findings = find_shared_prime_pairs(keys)
-        recovered = recover_shared_prime_private_keys(keys, findings)
-        self.assertEqual(len(findings), 1)
-        for index in pair:
-            self.assertEqual(recovered[keys[index].n].d, private_keys[keys[index].n].d)
+    def test_common_modulus_attack_recovers_message(self):
+        first_key, second_key, _ = generate_common_modulus_keys(bits=128)
+        message = bytes_to_int(b"test")
+        recovered = common_modulus_attack(
+            first_key,
+            encrypt_int(message, first_key),
+            second_key,
+            encrypt_int(message, second_key),
+        )
+        self.assertEqual(recovered, message)
 
-    def test_shared_prime_attack_decrypts_message(self):
-        keys, _, pair = generate_vulnerable_keyset(count=3, bits=128)
-        ciphertext = encrypt_int(bytes_to_int(b"test"), keys[pair[0]])
-        recovered = recover_shared_prime_private_keys(keys, find_shared_prime_pairs(keys))
-        self.assertEqual(decrypt_int(ciphertext, recovered[keys[pair[0]].n]), bytes_to_int(b"test"))
+    def test_indexed_collection_scan_recovers_same_n_message(self):
+        keys, expected_pair = generate_common_modulus_keyset(count=8, bits=128)
+        message = bytes_to_int(b"test")
+        ciphertexts = [encrypt_int(message, key) for key in keys]
+        findings = find_common_modulus_pairs(keys)
+        recovered = recover_messages_from_pairs(keys, ciphertexts, findings)
+        self.assertEqual(findings, [expected_pair])
+        self.assertEqual(recovered[expected_pair], message)
 
     def test_wiener_attack_recovers_small_private_exponent(self):
         public_key, original = generate_wiener_vulnerable_key(bits=256)
         recovered = wiener_attack(public_key)
         self.assertIsNotNone(recovered)
         self.assertEqual(recovered.d, original.d)
-
-    def test_batch_gcd_recovers_shared_prime_keys(self):
-        keys, private_keys, pair = generate_vulnerable_keyset(count=8, bits=128)
-        findings = batch_gcd_findings(keys)
-        recovered = recover_batch_gcd_private_keys(keys, findings)
-        self.assertEqual({index for index, _ in findings}, set(pair))
-        for index in pair:
-            self.assertEqual(recovered[keys[index].n].d, private_keys[keys[index].n].d)
 
     def test_wiener_ratio_generator_produces_requested_scale(self):
         public_key, private_key, actual_ratio = generate_wiener_key_at_ratio(0.10, bits=256)

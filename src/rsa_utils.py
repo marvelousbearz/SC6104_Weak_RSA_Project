@@ -19,10 +19,16 @@ class PrivateKey:
 
 # Euclidean
 def extended_gcd(a: int, b: int) -> Tuple[int, int, int]:
-    if b == 0:
-        return a, 1, 0
-    g, x, y = extended_gcd(b, a % b)
-    return g, y, x - (a // b) * y
+    """Return gcd(a, b) and Bézout coefficients without recursion depth limits."""
+    old_r, r = a, b
+    old_s, s = 1, 0
+    old_t, t = 0, 1
+    while r:
+        quotient = old_r // r
+        old_r, r = r, old_r - quotient * r
+        old_s, s = s, old_s - quotient * s
+        old_t, t = t, old_t - quotient * t
+    return old_r, old_s, old_t
 
 # modular inverse
 def mod_inverse(a: int, modulus: int) -> int:

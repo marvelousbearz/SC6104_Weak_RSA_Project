@@ -3,7 +3,7 @@
 ## Slide 1 - Title (0:00-0:25)
 
 Our question is simple: can a 2048-bit RSA key still fail even when nobody can
-factor a normal 2048-bit modulus? Yes, if key generation reuses a prime or if
+factor a normal 2048-bit modulus? Yes, if an implementation reuses a modulus or if
 the private exponent is dangerously small.
 
 ## Slide 2 - Threat model (0:25-1:10)
@@ -12,16 +12,18 @@ The attacker receives public keys only. We generate all test keys locally. The
 attacker never brute-forces a normal RSA modulus. Instead, the attacker finds a
 mistake in how the key was generated.
 
-## Slide 3 - Shared-prime attack (1:10-2:15)
+## Slide 3 - Common-modulus attack (1:10-2:15)
 
-If two moduli are N1 = p*q1 and N2 = p*q2, their greatest common divisor is p.
-Once p is known, phi(N) and then d follow immediately.
+If the same message is encrypted with the same N under coprime exponents e1 and
+e2, Extended Euclid finds a and b such that a*e1+b*e2=1. Therefore c1^a*c2^b
+equals the original message modulo N. No factorisation is needed.
 
-## Slide 4 - Shared-prime demo (2:15-3:05)
+## Slide 4 - Common-modulus demo (2:15-3:05)
 
-Run `python3 -m src.demo --bits 2048`. Point out that the program knows only
-the public key collection during the attack. The recovered private key decrypts
-the demonstration message.
+Run `python3 -m src.demo --bits 2048`. The program first creates four public
+keys, then indexes them by N. Only one pair shares N and has coprime exponents.
+It uses the two corresponding ciphertexts to recover the message without a
+private key.
 
 ## Slide 5 - Wiener attack (3:05-4:15)
 
@@ -36,8 +38,10 @@ recovers d and decrypts a second message.
 
 ## Slide 7 - Experiments (5:00-6:25)
 
-The graph shows the measured time for the controlled tests. The batch GCD scan
-grows with the number of public keys. Wiener recovery remains quick because it
+The graph compares naive all-pairs scanning with indexing the key collection by
+N. The indexed method avoids comparisons between unrelated moduli. Common-
+modulus recovery uses arithmetic structure rather than factoring N. Wiener recovery
+remains quick because it
 uses arithmetic structure rather than factoring N.
 
 ## Slide 8 - Defenses and conclusion (6:25-8:00)

@@ -1,0 +1,6 @@
+public_keys,naive_pairwise_us,indexed_scan_us,vulnerable_pairs_found
+8,2.0,1.71,1
+16,6.08,3.21,1
+32,22.54,5.71,1
+64,96.13,14.87,1
+128,355.67,21.46,1
