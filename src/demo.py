@@ -4,25 +4,26 @@ import argparse
 from math import isqrt
 
 from .rsa_utils import bytes_to_int, decrypt_int, encrypt_int, int_to_bytes
-from .shared_prime_attack import (
-    find_shared_prime_pairs,
-    generate_vulnerable_keyset,
-    recover_shared_prime_private_keys,
+from .common_modulus_attack import (
+    find_common_modulus_pairs,
+    generate_common_modulus_keyset,
+    recover_messages_from_pairs,
 )
 from .wiener_attack import generate_wiener_vulnerable_key, wiener_attack
 
 
-def shared_prime_demo(bits: int) -> None:
-    print("\n[1/2] Shared-prime attack")
-    keys, _, expected_pair = generate_vulnerable_keyset(count=4, bits=bits)
-    message = bytes_to_int(b"RSA keys need independent primes")
-    ciphertext = encrypt_int(message, keys[expected_pair[0]])
-    findings = find_shared_prime_pairs(keys)
-    recovered = recover_shared_prime_private_keys(keys, findings)
-    key = recovered[keys[expected_pair[0]].n]
-    plaintext = int_to_bytes(decrypt_int(ciphertext, key)).decode()
-    print(f"Generated {len(keys)} public moduli of about {bits} bits.")
-    print(f"Public gcd scan found {len(findings)} shared-prime pair(s).")
+def common_modulus_demo(bits: int) -> None:
+    print("\n[1/2] Common-modulus attack (same N, different e)")
+    keys, expected_pair = generate_common_modulus_keyset(count=4, bits=bits)
+    message = bytes_to_int(b"Never reuse an RSA modulus")
+    ciphertexts = [encrypt_int(message, key) for key in keys]
+    findings = find_common_modulus_pairs(keys)
+    recovered_message = recover_messages_from_pairs(keys, ciphertexts, findings)[expected_pair]
+    plaintext = int_to_bytes(recovered_message).decode()
+    print(f"Generated {len(keys)} public keys of about {bits} bits.")
+    print(f"Two keys reuse one {keys[0].n.bit_length()}-bit modulus with e1={keys[0].e} and e2={keys[1].e}.")
+    print(f"Indexed scan found {len(findings)} same-N, coprime-e pair(s).")
+    print("Extended Euclid found a, b such that a*e1 + b*e2 = 1.")
     print(f"Recovered plaintext: {plaintext}")
 
 
@@ -46,7 +47,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bits", type=int, default=2048)
     args = parser.parse_args()
-    shared_prime_demo(args.bits)
+    common_modulus_demo(args.bits)
     wiener_demo(args.bits)
 
 

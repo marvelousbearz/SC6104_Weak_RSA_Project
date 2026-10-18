@@ -15,10 +15,11 @@
         <div>
           <h1>Breaking<br>Weak RSA Keys</h1>
           <p class="lede">Two controlled attacks show why large moduli cannot compensate for faulty key generation.</p>
+          <p class="team">ZHANG LIXIANG&nbsp;&nbsp;·&nbsp;&nbsp;PAI LINGWEI</p>
         </div>
         <div class="formula-list">
-          <div><h2>Shared prime reuse</h2><code>gcd(N₁, N₂) = p</code></div>
-          <div><h2>Small private exponent</h2><code>d &lt; N^(1/4) / 3</code></div>
+          <div><h2>Same N, Different e</h2><code>a·e₁ + b·e₂ = 1</code></div>
+          <div><h2>Small d — Wiener Attack</h2><code>d &lt; N^(1/4) / 3</code></div>
         </div>
       </div>
       <footer>SC6104 CRYPTOGRAPHY</footer>
@@ -28,29 +29,29 @@
       <header><span>THREAT MODEL</span><span>02</span></header>
       <h1>Threat model</h1><p class="lede">The attacker receives public keys only</p>
       <div class="two-col">
-        <ul class="facts"><li><b>Known to attacker</b>RSA moduli N and public exponent e from a controlled local key set.</li><li><b>Not attempted</b>No generic factorization of a correctly generated 2048-bit RSA modulus.</li><li><b>Goal</b>Recover the private key only when an implementation makes a specific error.</li></ul>
-        <aside class="paper"><small>PUBLIC</small><code>(N, e)</code><strong>weak parameter<br>or repeated prime</strong></aside>
+        <ul class="facts"><li><b>Known to attacker</b>One reused RSA modulus N, two public exponents, and two ciphertexts for the same message.</li><li><b>Not attempted</b>No generic factorization of a correctly generated 2048-bit RSA modulus.</li><li><b>Goal</b>Recover the message only when an implementation reuses a modulus incorrectly.</li></ul>
+        <aside class="paper"><small>PUBLIC</small><code>(N, e₁), (N, e₂)</code><strong>reused modulus<br>and same message</strong></aside>
       </div>
       <footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
 
     <section class="slide">
-      <header><span>ATTACK 1 / SHARED PRIME</span><span>03</span></header>
-      <h1>Shared-prime attack</h1><p class="lede">Faulty randomness can reuse one secret prime across two public moduli</p>
-      <div class="key-row"><div class="paper key"><code>N₁ = p × q₁</code><small>same p</small></div><div class="paper key"><code>N₂ = p × q₂</code><small>same p</small></div></div>
-      <p class="hero-formula">gcd(N₁, N₂) = p</p><p class="center">Knowing p gives q, φ(N), and then d</p>
+      <header><span>ATTACK 1 / COMMON MODULUS</span><span>03</span></header>
+      <h1>Same N, different e</h1><p class="lede">Reusing one RSA modulus for the same message leaks that message</p>
+      <div class="key-row"><div class="paper key"><code>c₁ = m^e₁ mod N</code><small>same N, same m</small></div><div class="paper key"><code>c₂ = m^e₂ mod N</code><small>gcd(e₁, e₂) = 1</small></div></div>
+      <p class="hero-formula">a·e₁ + b·e₂ = 1</p><p class="center">Then c₁ᵃ · c₂ᵇ = m mod N</p>
       <footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
 
     <section class="slide">
-      <header><span>DEMO / SHARED PRIME</span><span>04</span></header>
+      <header><span>DEMO / COMMON MODULUS</span><span>04</span></header>
       <h1>Live demonstration</h1><p class="lede">The attack program sees only public parameters</p>
-      <div class="two-col demo"><ol><li>Generate four 2048-bit public keys</li><li>Reuse one prime in exactly two keys</li><li>Compute gcd for each public-key pair</li><li>Reconstruct d and decrypt the message</li></ol><pre>gcd scan found
-1 vulnerable pair
+      <div class="two-col demo"><ol><li>Generate four 2048-bit public keys</li><li>Reuse one N with coprime e₁ and e₂</li><li>Index the collection by N</li><li>Use Extended Euclid to recover the message</li></ol><pre>indexed scan found
+1 same-N pair
 
 Recovered plaintext:
-RSA keys need
-independent primes</pre></div>
+Never reuse an
+RSA modulus</pre></div>
       <footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
 
@@ -69,17 +70,17 @@ independent primes</pre></div>
     </section>
 
     <section class="slide">
-      <header><span>EXPERIMENTS</span><span>07</span></header>
-      <h1>Measured controlled experiments</h1><p class="lede">Timings regenerate each run on locally generated vulnerable keys</p>
-      <div class="chart-grid"><figure><figcaption>Shared-prime scan</figcaption><img src="../results/attack_timings.svg" alt="Timing chart for shared-prime scan and Wiener recovery"></figure><div class="chart-note"><b>Interpretation</b><p>Batch GCD scanning grows with the number of public keys. Wiener recovery exploits a parameter weakness rather than generic factorization.</p><p>Run <code>python3 -m experiments.run_experiments</code> to regenerate results.</p></div></div>
+      <header><span>ADVANCED EXPERIMENTS</span><span>07</span></header>
+      <h1>Collection scale and attack boundary</h1><p class="lede">Both experiments use only locally generated vulnerable RSA keys</p>
+      <div class="chart-grid"><figure><figcaption>Common-modulus collection audit and Wiener success boundary</figcaption><img src="../results/advanced_experiments.svg" alt="Naive versus indexed common-modulus scanning and Wiener success rate across private-exponent ratios"></figure><div class="chart-note"><b>Research result</b><p>Indexing public keys by N avoids needless comparisons between unrelated moduli as the collection grows.</p><p>Wiener recovery remains possible beyond the classical one-third guide in some trials, but the success rate becomes unreliable.</p><p>Run <code>python3 -m experiments.run_advanced_experiments</code> to regenerate results.</p></div></div>
       <footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
 
     <section class="slide">
       <header><span>CONCLUSION</span><span>08</span></header>
       <h1>Large RSA keys still need correct generation</h1>
-      <ul class="facts conclusion"><li><b>Use reviewed libraries</b>Avoid custom key-generation code in production systems.</li><li><b>Use a CSPRNG</b>Independent entropy prevents repeated primes across keys.</li><li><b>Avoid manual d selection</b>RSA parameters require validated mathematical constraints.</li></ul>
-      <p class="takeaway">Key length protects against generic factoring. It cannot repair flawed randomness or unsafe parameters.</p><footer>SC6104 CRYPTOGRAPHY</footer>
+      <ul class="facts conclusion"><li><b>Use reviewed libraries</b>Avoid custom key-generation code in production systems.</li><li><b>Never reuse N</b>Each RSA key pair needs its own independently generated modulus.</li><li><b>Avoid manual d selection</b>RSA parameters require validated mathematical constraints.</li></ul>
+      <p class="takeaway">Key length protects against generic factoring. It cannot repair modulus reuse or unsafe parameters.</p><footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
 
     <section class="slide">
@@ -228,15 +229,41 @@ independent primes</pre></div>
       <footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
   </main>
-  <p class="hint">Use ← → keys to navigate</p>
+  <p class="hint">← → navigate · click timer or T start/pause · R reset</p>
   <script>
     const slides = [...document.querySelectorAll('.slide')]; let current = 0;
+    const headers = [...document.querySelectorAll('header')];
+    const timerNodes = headers.map(header => {
+      const node = document.createElement('button');
+      node.className = 'timer';
+      node.type = 'button';
+      node.setAttribute('aria-label', 'Start or pause the 8-minute presentation timer');
+      header.insertBefore(node, header.lastElementChild);
+      return node;
+    });
+    let secondsLeft = 8 * 60, timerId = null;
+    function renderTimer() {
+      const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+      const seconds = String(secondsLeft % 60).padStart(2, '0');
+      timerNodes.forEach(node => node.textContent = `${minutes}:${seconds}`);
+    }
+    function startTimer() {
+      if (timerId || secondsLeft === 0) return;
+      timerId = setInterval(() => { secondsLeft -= 1; renderTimer(); if (secondsLeft === 0) pauseTimer(); }, 1000);
+    }
+    function pauseTimer() { clearInterval(timerId); timerId = null; }
+    function toggleTimer() { timerId ? pauseTimer() : startTimer(); }
+    function resetTimer() { pauseTimer(); secondsLeft = 8 * 60; renderTimer(); }
+    timerNodes.forEach(node => node.addEventListener('click', toggleTimer));
+    renderTimer();
     function show(index) { slides[current].classList.remove('active'); current = (index + slides.length) % slides.length; slides[current].classList.add('active'); }
     function fitDeck() { document.documentElement.style.setProperty('--deck-scale', Math.min(innerWidth / 1600, innerHeight / 900)); }
     addEventListener('resize', fitDeck); fitDeck();
     addEventListener('keydown', event => {
-      if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); show(current + 1); }
-      if (event.key === 'ArrowLeft') { event.preventDefault(); show(current - 1); }
+      if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); startTimer(); show(current + 1); }
+      if (event.key === 'ArrowLeft') { event.preventDefault(); startTimer(); show(current - 1); }
+      if (event.key.toLowerCase() === 't') { event.preventDefault(); toggleTimer(); }
+      if (event.key.toLowerCase() === 'r') { event.preventDefault(); resetTimer(); }
     });
   </script>
 </body>

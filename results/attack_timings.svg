@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360">
 <rect width="960" height="360" fill="#09090A"/>
 <style>text{font-family:Arial,sans-serif;fill:#B8B5AD;font-size:15px} .t{fill:#F4F1EA;font-size:20px;font-weight:bold} .axis{stroke:#7E7C77;stroke-width:1} .grid{stroke:#2D2D34;stroke-width:1}</style>
-<text class="t" x="55" y="38">Shared-prime batch GCD scan</text><text class="t" x="510" y="38">Wiener recovery time</text>
+<text class="t" x="55" y="38">Common-modulus message recovery</text><text class="t" x="510" y="38">Wiener recovery time</text>
 <line class="axis" x1="55" y1="255" x2="450" y2="255"/><line class="axis" x1="55" y1="70" x2="55" y2="255"/>
 <line class="axis" x1="510" y1="255" x2="900" y2="255"/><line class="axis" x1="510" y1="70" x2="510" y2="255"/>
 <line class="grid" x1="55" y1="180" x2="450" y2="180"/><line class="grid" x1="510" y1="180" x2="900" y2="180"/>
-<polyline fill="none" stroke="#F0392B" stroke-width="3" points="92.0,252.2 204.0,245.4 316.0,214.0 428.0,105.0"/>
-<circle cx="92.0" cy="252.2" r="5" fill="#F0392B"/><circle cx="204.0" cy="245.4" r="5" fill="#F0392B"/><circle cx="316.0" cy="214.0" r="5" fill="#F0392B"/><circle cx="428.0" cy="105.0" r="5" fill="#F0392B"/>
-<rect x="535" y="147.8" width="56" height="107.2" fill="#F0392B"/><rect x="647" y="144.3" width="56" height="110.7" fill="#F0392B"/><rect x="759" y="105.0" width="56" height="150.0" fill="#F0392B"/>
-<text x="92" y="286">4</text><text x="204" y="286">8</text><text x="316" y="286">16</text><text x="428" y="286">32</text><text x="563" y="286">255</text><text x="675" y="286">512</text><text x="787" y="286">768</text>
-<text x="55" y="324">Public keys scanned</text><text x="510" y="324">Modulus size in bits</text>
+<polyline fill="none" stroke="#F0392B" stroke-width="3" points="92.0,225.4 204.0,186.8 316.0,149.6 428.0,105.0"/>
+<circle cx="92.0" cy="225.4" r="5" fill="#F0392B"/><circle cx="204.0" cy="186.8" r="5" fill="#F0392B"/><circle cx="316.0" cy="149.6" r="5" fill="#F0392B"/><circle cx="428.0" cy="105.0" r="5" fill="#F0392B"/>
+<rect x="535" y="135.4" width="56" height="119.6" fill="#F0392B"/><rect x="647" y="123.3" width="56" height="131.7" fill="#F0392B"/><rect x="759" y="105.0" width="56" height="150.0" fill="#F0392B"/>
+<text x="92" y="286">256</text><text x="204" y="286">511</text><text x="316" y="286">768</text><text x="428" y="286">1024</text><text x="563" y="286">255</text><text x="675" y="286">511</text><text x="787" y="286">768</text>
+<text x="55" y="324">Modulus size in bits</text><text x="510" y="324">Modulus size in bits</text>
 <text x="55" y="58">milliseconds</text><text x="510" y="58">milliseconds</text>
 </svg>

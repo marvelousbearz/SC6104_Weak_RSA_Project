@@ -2,15 +2,15 @@
 
 ## Why does a 2048-bit modulus not save the vulnerable keys?
 
-Neither attack factors a normal 2048-bit modulus. The shared-prime attack finds
-a common factor with gcd. Wiener uses the relationship between e, d, and phi(N)
+Neither attack factors a normal 2048-bit modulus. The common-modulus attack uses
+two ciphertexts and Bézout coefficients. Wiener uses the relationship between e, d, and phi(N)
 when d is too small.
 
-## Does shared-prime reuse occur outside a classroom?
+## Does common-modulus reuse occur outside a classroom?
 
-It can occur when devices have insufficient entropy during key generation or
-when an implementation mishandles randomness. Our project does not claim that
-it is common in any named product; it demonstrates the mathematical impact.
+It can occur when an implementation generates one modulus and incorrectly uses
+it for multiple RSA key pairs or recipients. Our project does not claim that it
+is common in any named product; it demonstrates the mathematical impact.
 
 ## What is the Wiener vulnerability condition?
 
@@ -24,6 +24,6 @@ mistakes and efficient enough for encryption and signature verification.
 
 ## What should developers do?
 
-Use established libraries, seed from a CSPRNG, avoid custom RSA parameter
-selection, and test key-generation pipelines for repeated factors.
+Use established libraries, generate an independent modulus for every RSA key
+pair, avoid custom RSA parameter selection, and test key-generation pipelines.
 

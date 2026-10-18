@@ -66,3 +66,30 @@ def generate_wiener_vulnerable_key(bits: int = 2048) -> Tuple[PublicKey, Private
                 e = mod_inverse(d, phi)
                 return PublicKey(n, e), PrivateKey(n, d, p, q)
 
+
+def generate_wiener_key_at_ratio(
+    ratio: float, bits: int = 512
+) -> Tuple[PublicKey, PrivateKey, float]:
+    """Generate a local RSA key with d close to ratio * N^(1/4).
+
+    The function deliberately permits ratios above Wiener's classical
+    sufficient bound so experiments can measure where recovery stops working.
+    """
+    if ratio <= 0:
+        raise ValueError("ratio must be positive")
+    half = bits // 2
+    while True:
+        p, q = generate_prime(half), generate_prime(bits - half)
+        if p == q:
+            continue
+        n = p * q
+        phi = (p - 1) * (q - 1)
+        fourth_root = isqrt(isqrt(n))
+        target = max(3, int(ratio * fourth_root)) | 1
+        # Search nearby odd values so d remains invertible modulo phi(N).
+        for offset in range(0, 10_000, 2):
+            for candidate in (target + offset, target - offset):
+                if 1 < candidate < phi and candidate % 2 and gcd(candidate, phi) == 1:
+                    e = mod_inverse(candidate, phi)
+                    return PublicKey(n, e), PrivateKey(n, candidate, p, q), candidate / fourth_root
+
