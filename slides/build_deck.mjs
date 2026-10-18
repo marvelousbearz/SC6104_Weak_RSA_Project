@@ -4,11 +4,11 @@ import { pathToFileURL } from "node:url";
 import { Presentation, PresentationFile } from "@oai/artifact-tool";
 
 const workspaceDir = "/Users/marvelousbear/Desktop/SC6104_Weak_RSA_Project";
-const skillDir = "/Users/marvelousbear/.codex/plugins/cache/openai-primary-runtime/presentations/26.1013.11914/skills/presentations";
+const skillDir = "/Users/marvelousbear/.codex/plugins/cache/openai-primary-runtime/presentations/26.1015.12040/skills/presentations";
 const runtimePython = "/Users/marvelousbear/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3";
 const outDir = path.join(workspaceDir, "slides");
 const stagingDir = path.join(workspaceDir, ".pptx_build");
-const finalPath = path.join(outDir, "Weak_RSA_Project_Seafoam_Academic.pptx");
+const finalPath = path.join(outDir, "Weak_RSA_Project_Seafoam_Academic_Timer.pptx");
 
 const C = { bg: "F5F1E8", panel: "FFFFFF", line: "C8D6D1", ink: "18384A", muted: "46616B", dim: "718A8D", red: "167D86", green: "167D86" };
 const display = "Georgia";
@@ -35,7 +35,9 @@ function chrome(slide, number, section = "SC6104 / WEAK RSA") {
   slide.background.fill = C.bg;
   box(slide, 62, 55, 1156, 2, C.ink);
   text(slide, section, 62, 70, 540, 18, 11, C.muted, { mono: true, bold: true });
-  text(slide, String(number).padStart(2, "0"), 1160, 70, 58, 18, 12, C.red, { mono: true, align: "right", bold: true });
+  text(slide, "TIME", 1000, 70, 48, 18, 11, C.muted, { mono: true, bold: true, align: "right" });
+  text(slide, "08:00", 1057, 65, 92, 26, 18, C.red, { mono: true, bold: true, align: "right" });
+  text(slide, String(number).padStart(2, "0"), 1165, 70, 53, 18, 12, C.muted, { mono: true, align: "right", bold: true });
   box(slide, 62, 655, 1156, 1, C.line);
   text(slide, "SC6104 CRYPTOGRAPHY", 62, 667, 400, 17, 12, C.muted, { mono: true });
 }
@@ -177,7 +179,7 @@ async function main() {
     materializeLiteralChartWorkbooks: true,
     fontPolicy: { basis: "design", families: [display, body, mono, "Aptos"] },
     verifyArtifactToolImport: true,
-    receiptPath: path.join(stagingDir, "Weak_RSA_Project_Seafoam_Academic.validation.json"),
+    receiptPath: path.join(stagingDir, "Weak_RSA_Project_Seafoam_Academic_Timer.validation.json"),
   });
   for (const [index, slide] of deck.slides.items.entries()) {
     await blobToFile(path.join(stagingDir, `slide-${String(index + 1).padStart(2, "0")}.png`), await deck.export({ slide, format: "png", scale: 1 }));

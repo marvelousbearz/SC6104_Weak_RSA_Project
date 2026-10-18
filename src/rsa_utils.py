@@ -1,5 +1,3 @@
-"""Minimal RSA primitives for controlled classroom experiments only."""
-
 from dataclasses import dataclass
 from math import gcd
 import secrets
@@ -11,7 +9,6 @@ class PublicKey:
     n: int
     e: int
 
-
 @dataclass(frozen=True)
 class PrivateKey:
     n: int
@@ -20,20 +17,21 @@ class PrivateKey:
     q: int
 
 
+# Euclidean
 def extended_gcd(a: int, b: int) -> Tuple[int, int, int]:
     if b == 0:
         return a, 1, 0
     g, x, y = extended_gcd(b, a % b)
     return g, y, x - (a // b) * y
 
-
+# modular inverse
 def mod_inverse(a: int, modulus: int) -> int:
     g, x, _ = extended_gcd(a, modulus)
     if g != 1:
         raise ValueError("modular inverse does not exist")
     return x % modulus
 
-
+# Miller-Rabin
 def is_probable_prime(n: int, rounds: int = 32) -> bool:
     if n < 2:
         return False
@@ -69,6 +67,7 @@ def generate_prime(bits: int) -> int:
             return candidate
 
 
+# know p -> get private key
 def private_from_factor(n: int, e: int, p: int) -> PrivateKey:
     if not 1 < p < n or n % p:
         raise ValueError("factor does not divide modulus")
@@ -76,7 +75,7 @@ def private_from_factor(n: int, e: int, p: int) -> PrivateKey:
     phi = (p - 1) * (q - 1)
     return PrivateKey(n=n, d=mod_inverse(e, phi), p=p, q=q)
 
-
+# RSA private key generator using safe/normal parameters
 def generate_rsa_key(bits: int = 2048, e: int = 65537) -> Tuple[PublicKey, PrivateKey]:
     if bits < 64:
         raise ValueError("at least 64 bits required")
@@ -92,12 +91,13 @@ def generate_rsa_key(bits: int = 2048, e: int = 65537) -> Tuple[PublicKey, Priva
             return PublicKey(n, e), PrivateKey(n, mod_inverse(e, phi), p, q)
 
 
+# RSA encryption
 def encrypt_int(message: int, key: PublicKey) -> int:
     if not 0 <= message < key.n:
         raise ValueError("message must be between 0 and n - 1")
     return pow(message, key.e, key.n)
 
-
+# RSA decryption
 def decrypt_int(ciphertext: int, key: PrivateKey) -> int:
     return pow(ciphertext, key.d, key.n)
 
