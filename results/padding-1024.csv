@@ -1,0 +1,4 @@
+experiment,key_bits,trial,elapsed_seconds,oracle_calls,iterations,success
+crack-pkcs1-v1-5,1024,1,2.5338947772979736,7056,991,True
+crack-arbitrary,1024,1,291.47006940841675,466186,992,True
+crack-oaep,1024,1,164.32978987693787,248961,992,True

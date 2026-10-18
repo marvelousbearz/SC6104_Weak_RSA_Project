@@ -81,6 +81,152 @@ independent primes</pre></div>
       <ul class="facts conclusion"><li><b>Use reviewed libraries</b>Avoid custom key-generation code in production systems.</li><li><b>Use a CSPRNG</b>Independent entropy prevents repeated primes across keys.</li><li><b>Avoid manual d selection</b>RSA parameters require validated mathematical constraints.</li></ul>
       <p class="takeaway">Key length protects against generic factoring. It cannot repair flawed randomness or unsafe parameters.</p><footer>SC6104 CRYPTOGRAPHY</footer>
     </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER ATTACK</span><span>09</span></header>
+      <p class="kicker">PART TWO — CHOSEN-CIPHERTEXT ATTACK</p>
+      <h1>Bleichenbacher's attack</h1>
+      <p class="lede">A padding-oracle attack that recovers RSA PKCS#1 v1.5 plaintext without ever learning the private key.</p>
+      <p class="hero-formula">(c · sᵉ)ᵈ mod n = m · s mod n</p>
+      <p class="center">One oracle bit per query narrows the plaintext until only one value remains</p>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER / ALGORITHM</span><span>10</span></header>
+      <h1>Algorithm</h1>
+      <p class="lede">Four steps repeat until the candidate interval collapses to a single value</p>
+      <div class="two-col">
+        <ul class="facts">
+          <li><b>1. Blinding</b>Find s₀ so c·s₀ᵉ mod n is conforming → known-conforming m₀ ∈ [2B, 3B)</li>
+          <li><b>2. Searching</b>Find next sᵢ so c₀·sᵢᵉ mod n is conforming (2a / 2b / 2c)</li>
+          <li><b>3. Narrowing</b>For every valid r, intersect [(2B+rn)/sᵢ, (3B−1+rn)/sᵢ] with the current interval(s)</li>
+          <li><b>4. Solve</b>Interval collapses to one point a → m = a·s₀⁻¹ mod n</li>
+        </ul>
+        <aside class="chart-note">
+          <b>Step 2 search strategy</b>
+          <p>2a — first search: linear scan from s₁ = ⌈n/3B⌉</p>
+          <p>2b — multiple intervals: linear scan from sᵢ₋₁ + 1</p>
+          <p>2c — one interval left: skip provably-dead ranges via bounds on r</p>
+        </aside>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER / CORRECTNESS</span><span>11</span></header>
+      <h1>Correctness</h1>
+      <p class="lede">Every oracle "yes" is a real numeric constraint, never a guess</p>
+      <div class="two-col">
+        <div class="derivation">
+          <code>2B ≤ m₀·s mod n &lt; 3B</code>
+          <p>Blinding guarantees m₀ ∈ [2B, 3B−1] to start</p>
+          <p>Step 3 tries every consistent r — the true m₀ always lands in a surviving interval</p>
+          <p>Intervals only shrink or get eliminated — never go empty if the math is right</p>
+        </div>
+        <aside class="paper">
+          <small>GUARANTEED TERMINATION</small>
+          <code>a = b ⟹ m₀</code>
+          <strong>finite solution space,<br>monotone shrinking</strong>
+        </aside>
+      </div>
+      <p class="center">Recover m = m₀·s₀⁻¹ mod n once the interval collapses to a point</p>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER / EXPERIMENTS</span><span>12</span></header>
+      <h1>Experiment results</h1>
+      <p class="lede">Averages over repeated trials against locally generated vulnerable keys</p>
+      <div class="chart-grid">
+        <figure>
+          <figcaption>First PKCS-conforming hit</figcaption>
+          <table class="stat-table">
+            <thead><tr><th>Key size</th><th>Avg. time</th><th>Avg. calls</th></tr></thead>
+            <tbody>
+              <tr><td>1024-bit</td><td>23.2 s</td><td>61,423</td></tr>
+              <tr><td>2048-bit</td><td>144.5 s</td><td>41,914</td></tr>
+            </tbody>
+          </table>
+          <p class="table-title">Full attack to recovery</p>
+          <table class="stat-table">
+            <thead><tr><th>Key size</th><th>Avg. time</th><th>Avg. calls</th><th>Avg. iter.</th></tr></thead>
+            <tbody>
+              <tr><td>1024-bit</td><td>118.7 s</td><td>307,869</td><td>922</td></tr>
+              <tr><td>2048-bit</td><td>138.1 s</td><td>28,021</td><td>2,017</td></tr>
+              <tr><td>4096-bit</td><td>1792.5 s</td><td>61,505</td><td>4,065</td></tr>
+            </tbody>
+          </table>
+        </figure>
+        <div class="chart-note">
+          <b>Interpretation</b>
+          <p>Oracle-call count is dominated by the ~2⁻¹⁶ probability of a random block starting with 0x00 0x02 — fixed by the padding check, not the key size.</p>
+          <p>Iteration count scales with modulus size: each step 2c round removes roughly one bit from the candidate interval.</p>
+        </div>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER / SCOPE</span><span>13</span></header>
+      <h1>Beyond PKCS#1 v1.5</h1>
+      <p class="lede">The attack only exploits RSA's group structure — it has no idea what encoding produced the ciphertext</p>
+      <div class="two-col">
+        <ul class="facts">
+          <li><b>Raw / unpadded RSA</b>Attackable — blinding finds a conforming entry point</li>
+          <li><b>OAEP, same key as a PKCS#1 v1.5 oracle</b>Attackable — recovers the raw OAEP block, needs a separate decode step afterward</li>
+          <li><b>OAEP, no PKCS#1 v1.5 oracle exists</b>Not attackable this way — needs a different attack (Manger's)</li>
+          <li><b>Lesson</b>Never let one private key serve two padding schemes with different oracle strength</li>
+        </ul>
+        <aside class="chart-note">
+          <b>Cross-scheme targets · 1024-bit</b>
+          <table class="stat-table" style="margin-top:12px">
+            <thead><tr><th>Target</th><th>Calls</th></tr></thead>
+            <tbody>
+              <tr><td>PKCS ciphertext</td><td>7,056</td></tr>
+              <tr><td>Raw ciphertext</td><td>466,186</td></tr>
+              <tr><td>OAEP ciphertext</td><td>248,961</td></tr>
+            </tbody>
+          </table>
+        </aside>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>BLEICHENBACHER / TAKEAWAY</span><span>14</span></header>
+      <h1>Takeaway</h1>
+      <ul class="facts conclusion">
+        <li><b>Fix</b>Use OAEP; make padding failures indistinguishable from any other decryption failure</li>
+        <li><b>Alternative</b>Move away from RSA entirely (e.g. ECDLP-based schemes) where this oracle class doesn't apply</li>
+        <li><b>Principle</b>Never expose a decryption path that leaks why something failed</li>
+      </ul>
+      <p class="takeaway">RSA isn't broken. The error-handling side channel is — a fixable implementation choice, not a flaw in the math.</p>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
+
+    <section class="slide">
+      <header><span>CONTRIBUTION</span><span>15</span></header>
+      <h1>Contribution</h1>
+      <p class="lede">Work completed on the Bleichenbacher attack implementation</p>
+      <div class="two-col">
+        <ul class="facts">
+          <li><b>Oracle check</b>PKCS#1 v1.5 padding-validity check</li>
+          <li><b>Step 1</b>Blinding</li>
+          <li><b>Step 2a</b>Initial multiplier search</li>
+          <li><b>Step 2b</b>Linear search with multiple intervals</li>
+          <li><b>Step 4</b>Plaintext recovery and unblinding</li>
+        </ul>
+        <aside class="paper">
+          <small>COMPONENTS</small>
+          <strong>Server</strong>
+          <p style="margin:0;color:var(--body);font-size:19px;line-height:1.3">RSA key generation, ciphertext creation, oracle interface</p>
+          <strong>Attack implementation</strong>
+          <p style="margin:0;color:var(--body);font-size:19px;line-height:1.3">Bleichenbacher attack driver and query orchestration</p>
+        </aside>
+      </div>
+      <footer>SC6104 CRYPTOGRAPHY</footer>
+    </section>
   </main>
   <p class="hint">Use ← → keys to navigate</p>
   <script>
