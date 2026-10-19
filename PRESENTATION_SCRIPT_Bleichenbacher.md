@@ -5,11 +5,9 @@ Short speaking notes for a slow speaker. Pause briefly between sections.
 
 ## Slide 1 — What Is the Bleichenbacher Attack?
 
-The Bleichenbacher attack was published in 1998. It targets how a server handles RSA PKCS#1 v1.5 padding, not RSA mathematics itself.
-
-RSA has a useful property: multiplying a ciphertext by \(s^e\) changes the decrypted message to \(m \cdot s \bmod n\).
-
-A padding oracle tells the attacker whether the result has valid padding. By repeating this process, the attacker narrows down the possible plaintext without learning the private key.
+hello, I will be talking about the bleichenbacher attack. A padding-oracle attack that recovers RSA PKCS#1 v1.5 plaintext without ever learning the private key.
+The attack uses the homographic properity of RSA, and the padding oracle can provide bounds of the plaintext.
+Together, the plaintext can be cracked without private key. 
 
 ---
 
@@ -19,7 +17,7 @@ The attack has four main steps.
 
 **First, blinding:** find a multiplier that produces a ciphertext accepted by the oracle.
 
-**Second, searching:** find more multipliers that produce valid padding. The algorithm uses different search strategies depending on how many candidate intervals remain.
+**Second, searching:** find more multipliers that produce valid padding.
 
 **Third, narrowing:** use each valid response to reduce the possible plaintext range.
 
@@ -29,7 +27,7 @@ The attack has four main steps.
 
 ## Slide 3 — Why It Works
 
-A valid oracle response means the transformed plaintext lies within a known numeric range:
+A valid oracle response implies the transformed plaintext lies within a known bound:
 
 ```text
 2B ≤ m₀ · s mod n < 3B
@@ -45,31 +43,17 @@ Eventually, the candidates can narrow to one value. We then undo the blinding st
 
 ## Slide 4 — Experimental Results
 
-These results come from separate runs. The timings can vary significantly, so they describe this implementation rather than every possible attack.
 
-**First valid padding response:** For 1024-bit RSA, the average was **23.2 seconds and 61,423 oracle calls**. For 2048-bit RSA, it was **144.5 seconds and 41,914 calls**.
-
-**Full recovery:** For 1024-bit RSA, the average was **188.7 seconds and 307,869 calls**. One trial took much longer than the others, affecting the average.
-
-For 2048-bit RSA, the average was **138.1 seconds and 28,021 calls**. The single 4096-bit trial took **about 29.9 minutes** and used **61,505 calls**.
-
-In a separate cross-scheme experiment, the PKCS#1 v1.5, raw RSA, and OAEP cases reported recovery. These were single trials, so the results need further testing.
-
-For OAEP, we must distinguish recovering the RSA encoded message from decoding it to the original plaintext.
+The attack can crack 4096-bit RSA in feasible time.
+The estimated first-hit time is 2^16, however oracle checking follows the geometric distribution thus can vary very much.
+As the results, each iteration in the attack can reduce around 1 bit of entropy.
 
 ---
 
 ## Slide 5 — Beyond PKCS#1 v1.5
 
-The attack uses RSA's multiplication property, but it still needs a useful padding oracle.
-
-Raw RSA has no padding and is not secure for general encryption. A shared PKCS#1 v1.5 oracle may help recover a raw RSA message.
-
-OAEP is designed to resist this type of attack. However, reusing the same RSA key with a vulnerable PKCS#1 v1.5 oracle can create a cross-scheme risk.
-
-This does not mean OAEP was directly broken. Manger's attack is a different attack that relies on different oracle leakage.
-
-The lesson is to use separate keys for different schemes and avoid leaking decryption errors.
+The server may not communicate in plain PKCS1.5, we can use blinding to convert the ciphertext.
+As long as, the same public key is used. Different RSA schemes are still vunerable.
 
 ---
 
